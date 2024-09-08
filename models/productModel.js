@@ -14,7 +14,7 @@ const dimensionsSchema = new mongoose.Schema({
   depth: { type: Number, required: true }
 });
 
-const productSchema = new mongoose.Schema({
+  const productSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   category: { type: String, required: true },
