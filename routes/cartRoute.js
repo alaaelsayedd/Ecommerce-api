@@ -65,40 +65,61 @@ router.post("/:productId", async (req, res) => {
     res.status(500).json({ message: "Error adding product to cart", error });
   }
 });
+
+// Update the quantity of a product in the cart
 router.put("/:productId", async (req, res) => {
-    try {
-      // Get the quantity from request body
-      const { quantity } = req.body;
-      if (quantity <= 0) {
-        return res.status(400).json({ message: "Quantity must be a positive number" });
-      }
-  
-      // Find the cart (assuming there's a single cart for now)
-      let cart = await Cart.findOne();
-      if (!cart) {
-        return res.status(404).json({ message: "Cart not found" });
-      }
-  
-      // Find the product in the cart
-      const itemIndex = cart.items.findIndex(item => item.productId == req.params.productId);
-      if (itemIndex === -1) {
-        return res.status(404).json({ message: "Product not found in cart" });
-      }
-  
-      // Update the quantity of the product
-      cart.items[itemIndex].quantity = quantity;
-  
-      // Update total price
-      cart.totalPrice = cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
-  
-      // Save the updated cart
-      await cart.save();
-  
-      res.status(200).json({ message: "Cart updated", cart });
-    } catch (error) {
-      res.status(500).json({ message: "Error updating cart", error });
+  try {
+    const { quantity } = req.body;
+    if (quantity <= 0) {
+      return res.status(400).json({ message: "Quantity must be a positive number" });
     }
-  });
- 
+
+    let cart = await Cart.findOne();
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    const itemIndex = cart.items.findIndex(item => item.productId == req.params.productId);
+    if (itemIndex === -1) {
+      return res.status(404).json({ message: "Product not found in cart" });
+    }
+
+    cart.items[itemIndex].quantity = quantity;
+    cart.totalPrice = cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+    await cart.save();
+
+    res.status(200).json({ message: "Cart updated", cart });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating cart", error });
+  }
+});
+
+// Remove a product from the cart
+router.delete("/:productId", async (req, res) => {
+  try {
+    let cart = await Cart.findOne();
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    const itemIndex = cart.items.findIndex(item => item.productId == req.params.productId);
+    if (itemIndex === -1) {
+      return res.status(404).json({ message: "Product not found in cart" });
+    }
+
+    // Remove the product from the cart
+    const removedItem = cart.items.splice(itemIndex, 1)[0];
+
+    // Update the total price
+    cart.totalPrice -= removedItem.price * removedItem.quantity;
+
+    await cart.save();
+
+    res.status(200).json({ message: "Product removed from cart", cart });
+  } catch (error) {
+    res.status(500).json({ message: "Error removing product from cart", error });
+  }
+});
 
 module.exports = router;
